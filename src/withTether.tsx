@@ -1,4 +1,4 @@
-import { useCallback, ComponentType } from 'react';
+import { useCallback } from 'react';
 import { useTetherContext } from './TetherContext';
 import { TetherMetadata } from './types';
 
@@ -74,15 +74,15 @@ export function isForwardRefComponent(component: unknown): component is ForwardR
  * />
  * ```
  */
-export function withTether<
-  TMetadata = Record<string, unknown>, P = Record<string, unknown>>(
-  WrappedComponent: ComponentType<P> | ForwardRefComponent<P>
-): ComponentType<P & TetherProps<TMetadata>> {
-  const TetheredComponent = (props: P & TetherProps<TMetadata>) => {
+export function withTether<TMetadata = Record<string, unknown>>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  WrappedComponent: React.ComponentType<any>
+): <P>(props: P & TetherProps<TMetadata>) => React.ReactElement | null {
+  const TetheredComponent = <P,>(props: P & TetherProps<TMetadata>) => {
     const { tetherMetadata, ...restProps } = props;
-    const { registerTether } = useTetherContext();
+    const { registerTether } = useTetherContext<TMetadata>();
 
-    const finalMetadata: TetherMetadata = {
+    const finalMetadata: TetherMetadata<TMetadata> = {
       props: restProps,
       metadata: tetherMetadata,
     };
@@ -98,7 +98,6 @@ export function withTether<
       ref: tetherRef,
     } as P & { ref: (element: Element | null) => void };
 
-    // @ts-expect-error: Type assertion for component props compatibility
     return <WrappedComponent {...componentProps} />;
   };
 

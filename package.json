@@ -1,6 +1,6 @@
 {
   "name": "react-attractor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "React library to map DOM elements to React components",
   "keywords": [
@@ -28,9 +28,8 @@
     "dev": "npm run lint && vite",
     "build": "npm run lint && rv --npm . && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
+    "test": "npm run lint && vitest run",
+    "test:ui": "npm run lint && vitest --ui",
     "lint": "eslint src && tsc --noEmit",
     "type-check": "tsc --noEmit"
   },
