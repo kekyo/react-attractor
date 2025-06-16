@@ -1,7 +1,39 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import React, { forwardRef } from 'react'
-import { TetherProvider, withTether, useTetherContext } from '../src'
+import { TetherProvider, withTether, useTetherContext, TetherMetadata } from '../src'
+
+// Type definitions for test metadata
+interface BasicMetadata {
+  userId?: number
+  category?: string
+}
+
+interface TestMetadata {
+  data: number
+}
+
+interface UserMetadata {
+  userId: number
+  permissions: ('read' | 'write' | 'delete')[]
+  lastUpdated: Date
+  department: string
+}
+
+interface InspectorMetadata {
+  section: string
+  priority: string
+}
+
+interface ActionMetadata {
+  action: string
+}
+
+interface ModalMetadata {
+  modalId: string
+}
+
+
 
 // Test components
 const SimpleBox = forwardRef<HTMLDivElement, { label: string; color?: string }>((props, ref) => (
@@ -42,7 +74,7 @@ describe('React Tether', () => {
   describe('Basic functionality', () => {
     it('should register and retrieve tether data', () => {
       const TetheredBox = withTether(SimpleBox)
-      let tetherData: any = null
+      let tetherData: TetherMetadata | undefined = undefined
       
       const TestComponent = () => {
         const { getTether } = useTetherContext()
@@ -75,16 +107,16 @@ describe('React Tether', () => {
       
       // Verify tether data was retrieved
       expect(tetherData).toBeTruthy()
-      expect(tetherData.props.label).toBe('Test Label')
-      expect(tetherData.props.color).toBe('#ff0000')
+      expect(tetherData!.props.label).toBe('Test Label')
+      expect(tetherData!.props.color).toBe('#ff0000')
     })
 
     it('should handle custom metadata', () => {
-      const TetheredBox = withTether(SimpleBox)
-      let tetherData: any = null
+      const TetheredBox = withTether<BasicMetadata>(SimpleBox)
+      let tetherData: TetherMetadata<BasicMetadata> | undefined = undefined
       
       const TestComponent = () => {
-        const { getTether } = useTetherContext()
+        const { getTether } = useTetherContext<BasicMetadata>()
         
         const handleClick = () => {
           const element = document.querySelector('[data-testid="box"]')
@@ -117,13 +149,13 @@ describe('React Tether', () => {
       
       // Verify metadata was stored
       expect(tetherData).toBeTruthy()
-      expect(tetherData.metadata.userId).toBe(123)
-      expect(tetherData.metadata.category).toBe('test')
+      expect(tetherData!.metadata?.userId).toBe(123)
+      expect(tetherData!.metadata?.category).toBe('test')
     })
 
     it('should work without custom metadata', () => {
       const TetheredBox = withTether(SimpleBox)
-      let tetherData: any = null
+      let tetherData: TetherMetadata | undefined = undefined
       
       const TestComponent = () => {
         const { getTether } = useTetherContext()
@@ -156,8 +188,8 @@ describe('React Tether', () => {
       
       // Verify tether data exists but metadata is undefined
       expect(tetherData).toBeTruthy()
-      expect(tetherData.props.label).toBe('No Metadata')
-      expect(tetherData.metadata).toBeUndefined()
+      expect(tetherData!.props.label).toBe('No Metadata')
+      expect(tetherData!.metadata).toBeUndefined()
     })
 
     it('should preserve original component functionality', () => {
@@ -183,7 +215,7 @@ describe('React Tether', () => {
   describe('Multiple components', () => {
     it('should handle multiple tethered components independently', () => {
       const TetheredBox = withTether(SimpleBox)
-      const tetherResults: any[] = []
+      const tetherResults: TetherMetadata[] = []
       
       const TestComponent = () => {
         const { getTether } = useTetherContext()
@@ -232,11 +264,11 @@ describe('React Tether', () => {
       }
       
       const TetheredBox = withTether<UserMetadata>(SimpleBox)
-      let tetherData: any = null
+      let tetherData: TetherMetadata<UserMetadata> | undefined = undefined
       const testDate = new Date('2023-01-01')
       
       const TestComponent = () => {
-        const { getTether } = useTetherContext()
+        const { getTether } = useTetherContext<UserMetadata>()
         
         const handleClick = () => {
           const element = document.querySelector('[data-testid="box"]')
@@ -273,9 +305,9 @@ describe('React Tether', () => {
       
       // Verify typed metadata
       expect(tetherData).toBeTruthy()
-      expect(tetherData.metadata.userId).toBe(456)
-      expect(tetherData.metadata.permissions).toEqual(['read', 'write'])
-      expect(new Date(tetherData.metadata.lastUpdated)).toEqual(testDate)
+      expect(tetherData!.metadata!.userId).toBe(456)
+      expect(tetherData!.metadata!.permissions).toEqual(['read', 'write'])
+      expect(new Date(tetherData!.metadata!.lastUpdated)).toEqual(testDate)
     })
   })
 
@@ -294,7 +326,7 @@ describe('React Tether', () => {
     })
 
     it('should return undefined for non-tethered elements', () => {
-      let tetherData: any = 'not-checked'
+      let tetherData: TetherMetadata | undefined | string = 'not-checked'
       
       const TestComponent = () => {
         const { getTether } = useTetherContext()
@@ -333,7 +365,7 @@ describe('React Tether', () => {
   describe('HOC behavior', () => {
     it('should set correct displayName', () => {
       const TetheredBox = withTether(SimpleBox)
-      expect(TetheredBox.displayName).toBe('withTether(SimpleBox)')
+      expect((TetheredBox as any).displayName).toBe('withTether(SimpleBox)')
     })
 
     it('should handle components without displayName', () => {
@@ -342,7 +374,7 @@ describe('React Tether', () => {
       ))
       
       const TetheredAnonymous = withTether(AnonymousComponent)
-      expect(TetheredAnonymous.displayName).toBe('withTether(Component)')
+      expect((TetheredAnonymous as any).displayName).toBe('withTether(Component)')
     })
   })
 
@@ -350,11 +382,11 @@ describe('React Tether', () => {
   describe('README Sample Code Validation', () => {
     describe('Short Example', () => {
       it('should work with the README short example pattern', () => {
-        const TetheredBox = withTether(Box)
-        let tetherData: any = null
+        const TetheredBox = withTether<TestMetadata>(Box)
+        let tetherData: TetherMetadata<TestMetadata> | undefined = undefined
         
         const TestComponent = () => {
-          const { getTether } = useTetherContext()
+          const { getTether } = useTetherContext<TestMetadata>()
           
           const handleClick = (event: React.MouseEvent) => {
             const element = event.target as Element
@@ -385,17 +417,17 @@ describe('React Tether', () => {
         
         // Verify tether data was retrieved
         expect(tetherData).toBeTruthy()
-        expect(tetherData.metadata.data).toBe(123)
+        expect(tetherData!.metadata!.data).toBe(123)
       })
     })
 
     describe('Enhanced Component Usage', () => {
       it('should work with the README enhanced component example', () => {
-        const TetheredBox = withTether(Box)
-        let tetherData: any = null
+        const TetheredBox = withTether<BasicMetadata>(Box)
+        let tetherData: TetherMetadata<BasicMetadata> | undefined = undefined
         
         const MyComponent = () => {
-          const { getTether } = useTetherContext()
+          const { getTether } = useTetherContext<BasicMetadata>()
           
           const handleClick = () => {
             const element = document.querySelector('[data-testid="readme-box"]')
@@ -429,10 +461,10 @@ describe('React Tether', () => {
         
         // Verify tether data matches README example
         expect(tetherData).toBeTruthy()
-        expect(tetherData.props.label).toBe('Hello World')
-        expect(tetherData.props.color).toBe('#ff6b6b')
-        expect(tetherData.metadata.userId).toBe(123)
-        expect(tetherData.metadata.category).toBe('greeting')
+        expect(tetherData!.props.label).toBe('Hello World')
+        expect(tetherData!.props.color).toBe('#ff6b6b')
+        expect(tetherData!.metadata!.userId).toBe(123)
+        expect(tetherData!.metadata!.category).toBe('greeting')
       })
     })
 
@@ -495,11 +527,11 @@ describe('React Tether', () => {
         }
         
         const TetheredUserCard = withTether<UserMetadata>(UserCard)
-        let tetherData: any = null
+        let tetherData: TetherMetadata<UserMetadata> | undefined = undefined
         const testDate = new Date('2023-06-15')
         
         const TestComponent = () => {
-          const { getTether } = useTetherContext()
+          const { getTether } = useTetherContext<UserMetadata>()
           
           const handleClick = () => {
             const element = document.querySelector('[data-testid="user-card"]')
@@ -537,10 +569,10 @@ describe('React Tether', () => {
         
         // Verify typed metadata
         expect(tetherData).toBeTruthy()
-        expect(tetherData.metadata.userId).toBe(123)
-        expect(tetherData.metadata.permissions).toEqual(['read', 'write'])
-        expect(new Date(tetherData.metadata.lastUpdated)).toEqual(testDate)
-        expect(tetherData.metadata.department).toBe('Engineering')
+        expect(tetherData!.metadata!.userId).toBe(123)
+        expect(tetherData!.metadata!.permissions).toEqual(['read', 'write'])
+        expect(new Date(tetherData!.metadata!.lastUpdated)).toEqual(testDate)
+        expect(tetherData!.metadata!.department).toBe('Engineering')
       })
     })
 
@@ -553,7 +585,7 @@ describe('React Tether', () => {
         }
         
         const TetheredUserCard = withTether<UserMetadata>(UserCard)
-        let businessLogicResult: any = null
+        let businessLogicResult: { userId: number; permissions: string[]; department: string; canEdit: boolean } | null = null
         
         const TestComponent = () => {
           const { getTether } = useTetherContext()
@@ -562,9 +594,10 @@ describe('React Tether', () => {
             const tether = getTether(element)
             
             if (tether?.metadata) {
-              const userId = tether.metadata.userId
-              const permissions = tether.metadata.permissions
-              const department = tether.metadata.department
+              const metadata = tether.metadata as UserMetadata
+              const userId = metadata.userId
+              const permissions = metadata.permissions
+              const department = metadata.department
               
               businessLogicResult = {
                 userId,
@@ -606,10 +639,10 @@ describe('React Tether', () => {
         
         // Verify business logic worked correctly
         expect(businessLogicResult).toBeTruthy()
-        expect(businessLogicResult.userId).toBe(456)
-        expect(businessLogicResult.permissions).toEqual(['read', 'write', 'delete'])
-        expect(businessLogicResult.department).toBe('Marketing')
-        expect(businessLogicResult.canEdit).toBe(true)
+        expect(businessLogicResult!.userId).toBe(456)
+        expect(businessLogicResult!.permissions).toEqual(['read', 'write', 'delete'])
+        expect(businessLogicResult!.department).toBe('Marketing')
+        expect(businessLogicResult!.canEdit).toBe(true)
       })
     })
 
@@ -619,7 +652,7 @@ describe('React Tether', () => {
         const TetheredBox = withTether(Box)
         const TetheredUserCard = withTether(UserCard)
         
-        const tetherResults: any[] = []
+        const tetherResults: { metadata: any }[] = []
         
         const TestComponent = () => {
           const { getTether } = useTetherContext()

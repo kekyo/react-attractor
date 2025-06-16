@@ -9,17 +9,22 @@ A lightweight React library that enables you to retrieve React component informa
 Short example:
 
 ```tsx
-import { TetherProvider, withTether } from 'react-attractor';
+import { TetherProvider, withTether, useTetherContext } from 'react-attractor';
+
+interface BoxMetadata {
+  data: number;
+}
 
 // Apply tether ability on already declared component
-const TetheredBox = withTether(Box);
+const TetheredBox = withTether<BoxMetadata>(Box);
 
 // Handle click events to retrieve component data
-const handleClick = (event) => {
-  const element = event.target;
+const handleClick = (event: React.MouseEvent) => {
+  const { getTether } = useTetherContext<BoxMetadata>();
+  const element = event.target as Element;
   const tether = getTether(element);
   if (tether) {
-    console.log('Metadata:', tether.metadata);
+    console.log('Data:', tether.metadata?.data);
   }
 };
 
@@ -82,6 +87,13 @@ Note: Many UI libraries like Material UI already expose refs on most components,
 Components enhanced with withTether gain a `tetherMetadata` property that allows you to set custom data associated with DOM elements. This metadata can be retrieved later from the DOM elements.
 
 ```tsx
+interface GreetingMetadata {
+  userId: number;
+  category: string;
+}
+
+const TetheredBox = withTether<GreetingMetadata>(Box);
+
 const MyComponent = () => {
   return (
     <TetheredBox 
@@ -100,15 +112,20 @@ Once tethered components are rendered, you can retrieve component information an
 ```tsx
 import { useTetherContext } from 'react-attractor'
 
+interface InspectorMetadata {
+  userId?: number;
+  category?: string;
+  [key: string]: unknown;
+}
+
 function Inspector() {
-  const { getTether } = useTetherContext()
+  const { getTether } = useTetherContext<InspectorMetadata>()
   
   const handleClick = (event: React.MouseEvent) => {
     const element = event.target as Element
     const tether = getTether(element)
     
     if (tether) {
-      console.log('Component:', tether.component.displayName)
       console.log('Props:', tether.props)
       console.log('Custom metadata:', tether.metadata)
     }
@@ -152,7 +169,13 @@ const TetheredUserCard = withTether<UserMetadata>(UserCard)
 ### Retrieving Typed Metadata
 
 ```tsx
-const { getTether } = useTetherContext()
+interface UserMetadata {
+  userId: number;
+  permissions: ('read' | 'write' | 'delete')[];
+  department: string;
+}
+
+const { getTether } = useTetherContext<UserMetadata>()
 
 const handleElementInspection = (element: Element) => {
   const tether = getTether(element)
@@ -174,9 +197,16 @@ const handleElementInspection = (element: Element) => {
 ### Multiple Component Types
 
 ```tsx
-const TetheredButton = withTether(Button)
-const TetheredCard = withTether(Card)
-const TetheredModal = withTether(Modal)
+interface ButtonMetadata {
+  action: string;
+}
+
+interface CardMetadata {
+  userId: number;
+}
+
+const TetheredButton = withTether<ButtonMetadata>(Button)
+const TetheredCard = withTether<CardMetadata>(Card)
 
 // Each maintains its own props and metadata
 <TetheredButton onClick={handleClick} tetherMetadata={{ action: 'submit' }}>
