@@ -18,11 +18,13 @@ export default defineConfig({
       fileName: (format) => format === 'es' ? 'index.esm.js' : format === 'cjs' ? 'index.js' : `index.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'react/jsx-runtime': 'React',
+          'react/jsx-dev-runtime': 'React',
         },
       },
     },
