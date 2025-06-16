@@ -14,8 +14,8 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'ReactTether',
-      formats: ['es', 'umd'],
-      fileName: (format) => `index.${format === 'es' ? 'esm' : format}.js`,
+      formats: ['es', 'cjs', 'umd'],
+      fileName: (format) => format === 'es' ? 'index.esm.js' : format === 'cjs' ? 'index.js' : `index.${format}.js`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
@@ -26,10 +26,5 @@ export default defineConfig({
         },
       },
     },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './tests/setup.ts',
   },
 }) 
